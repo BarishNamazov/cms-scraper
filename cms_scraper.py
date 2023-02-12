@@ -126,7 +126,8 @@ class CmsSession:
 
         links = soup.select("a")
         statements = []
-        checker = None
+        managers = []
+
         for link in links:
             if not link.has_attr("href"):
                 continue
@@ -150,15 +151,17 @@ class CmsSession:
                     },
                 ).content
 
-            if "/checker" in href:
-                checker_url = urljoin(task_url, href)
-                checker = self.session.get(checker_url).content
+            if link.parent.has_attr("class") and link.parent["class"] == ["manager"]:
+                manager_name = href.split("/")[-1]
+                manager_url = urljoin(task_url, href)
+                manager = self.session.get(manager_url).content
+                managers.append({"name": manager_name, "binary": manager})
 
         return {
             "config": config,
             "statements": statements,
             "testcases": testcases_zip,
-            "checker": checker,
+            "managers": managers,
         }
 
     def get_tasks(self, download=False):
@@ -174,13 +177,13 @@ class CmsSession:
             task_id, task_name = url_a["href"].split("/")[-1], url_a.text
             task_title = title_td.text
 
-            contest = {
+            task = {
                 "id": task_id,
                 "name": task_name,
                 "title": task_title,
             }
 
-            tasks.append(contest)
+            tasks.append(task)
             if download:
                 directory = f"tasks/{task_id.zfill(3)}_{task_name}/"
                 config_file = os.path.join(directory, "config.json")
@@ -201,11 +204,16 @@ class CmsSession:
                 with open(directory + "testcases.zip", "wb") as f:
                     f.write(task_data["testcases"])
 
-                if task_data["checker"] is not None:
-                    with open(directory + "checker", "wb") as f:
-                        f.write(task_data["checker"])
+                if task_data["managers"]:
+                    managers_directory = os.path.join(directory, "managers/")
+                    os.makedirs(os.path.dirname(managers_directory), exist_ok=True)
+                    managers = task_data["managers"]
 
-            # break
+                    for manager in managers:
+                        with open(managers_directory + manager["name"], "wb") as f:
+                            f.write(manager["binary"])
+
+            print(task)
 
         tasks.sort(key=lambda contest: int(contest["id"]))
         os.makedirs(os.path.dirname("tasks/all_tasks.json"), exist_ok=True)

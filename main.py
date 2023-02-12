@@ -19,7 +19,7 @@ if __name__ == "__main__":
     config = dotenv_values(".env")
     cs = CmsSession(config["URL"], config["USERNAME"], config["PASSWORD"])
     # print(cs.get_contests(include={"config", "ranking"}))
-    print(cs.get_tasks(download=True))
+    cs.get_tasks(download=True)
     # print(cs.get_contest_configuration("1"))
     # print(cs.get_ranking("1"))
     # app()
