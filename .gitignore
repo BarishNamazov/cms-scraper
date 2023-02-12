@@ -1,2 +1,7 @@
 .env
 venv/
+contests/
+tasks/
+__pycache__
+contests.json
+contests.zip
